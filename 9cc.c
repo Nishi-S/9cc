@@ -25,6 +25,8 @@ struct Token
 
 // 現在着目しているトークン
 Token *token;
+// 入力プログラム
+char *user_input;
 
 // エラーを報告するための関数
 // printfと同じ引数をとる
@@ -32,6 +34,21 @@ void error(char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
+
+// エラー箇所を報告する
+void error_at(char *loc, char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+
+    int pos = loc - user_input;
+    fprintf(stderr, "%s\n", user_input);
+    fprintf(stderr, "%*s", pos, " "); // pos個の空白を出力
+    fprintf(stderr, "^ ");
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     exit(1);
@@ -55,7 +72,7 @@ void expect(char op)
 {
     if (token->kind != TK_RESERVED || token->str[0] != op)
     {
-        error("'%c'ではありません", op);
+        error_at(token->str, "'%c'ではありません", op);
     }
     token = token->next;
 }
@@ -66,7 +83,7 @@ int expect_number()
 {
     if (token->kind != TK_NUM)
     {
-        error("数ではありません");
+        error_at(token->str, "数ではありません");
     }
     int val = token->val;
     token = token->next;
@@ -137,6 +154,7 @@ int main(int argc, char **argv)
 
     // トークナイズする
     token = tokenize(argv[1]);
+    user_input = argv[1];
 
     // アセンブリの前半部分を出力
     printf(".intel_syntax noprefix\n");
